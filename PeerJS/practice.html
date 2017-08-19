@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Skyway</title>
+  </head>
+  <body>
+    <h1>通信</h1>
+    <p id="myid">my peerID:</p>
+    <p><input type="text" id="otherid" ><input type="button" name="button" value='登録' onclick='pconnect();'></input>
+
+    <p>送信側画面</p>
+    <p>送信動画：<input type="file" id='file' onchange='putvideo();'></p>
+    <video id="video1"  autoplay width="300",height="200" controls>
+
+    </video>
+    <p>受信側画面</p>
+    <video id="video2" autoplay width="300",height='200' controls>
+
+    </video>
+
+
+
+    <script src="peer.js"></script>
+    <script>
+    var peer = new Peer({key: '4e00ee3f-10e0-4aa9-ad9f-441155fe77a7',debug:3});
+
+    peer.on('error',function(err){
+      console.log('エラー発生！！！！'+err);
+    });
+    peer.on('open',function(id){//当ページを開いた時に作動する。ランダムなpeeridがコールバック関数の引数としてもらえる
+      console.log('my id is :'+id);
+      var myid=document.getElementById('myid');
+      myid.textContent=id;
+    });
+
+    peer.on('call',function(call){
+      console.log("コネクション接続要求が来ました");
+      //受信側がstreamを返す双方向通信の場合
+      //call.answer(recieveStream);//受信側が渡すstream
+
+      //受信側がstreamを返さない場合は一方向の通信に成る
+      call.answer();
+      console.log("コネクション接続完了");
+      /*
+        相手からのstreamを受け取る
+      */
+      call.on('stream',function(stream){
+        console.log("ストリーム受信中");
+        var recvideo=document.getElementById('video2');
+        recvideo.srcObject=stream;
+        console.log("ストリーム受信完了");
+      });
+
+    });
+
+
+
+    function putvideo(){
+      var file=document.getElementById('file').files[0];
+      var objectURL=window.URL.createObjectURL(file);
+      var video=document.getElementById('video1');
+      video.src=objectURL;
+
+    }
+    function pconnect(){
+      var otherid=document.getElementById('otherid').value;
+      var sendStream=document.getElementById('video1').captureStream();
+      console.log('other id:'+otherid);
+      console.log("接続開始");
+      var conn =peer.call(otherid,sendStream);//第二引数には相手に渡すMediaStreamオブジェクトが必要
+    }
+    </script>
+  </body>
+</html>
